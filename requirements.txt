@@ -1,0 +1,7 @@
+anthropic
+sentence-transformers
+faiss-cpu
+langchain
+langchain-community
+pypdf2
+python-dotenv
