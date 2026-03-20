@@ -1,0 +1,7 @@
+Software License Policy
+
+All software used within the organization must be properly licensed.
+Employees are prohibited from installing unlicensed software on company devices.
+License keys must be stored in the central license management system.
+Annual audits are conducted every December to verify license compliance.
+Violations must be reported to the IT compliance team within 24 hours.

@@ -1,0 +1,7 @@
+License Renewal Terms
+
+Software licenses must be renewed 30 days before expiration.
+The procurement team is responsible for initiating renewal requests.
+Renewals exceeding $10,000 require VP approval before processing.
+Grace periods of 7 days are granted for licenses under active renewal.
+Expired licenses must be removed from all systems within 48 hours.
