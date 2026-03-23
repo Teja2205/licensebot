@@ -27,7 +27,7 @@ def build_vector_store(chunks):
 # ─────────────────────────────────────────────
 # Component 3 — Retrieval with Distance Threshold
 # ─────────────────────────────────────────────
-def retrieve(query, index, chunks, model, top_k=2, threshold=1.2):
+def retrieve(query, index, chunks, model, top_k=2, threshold=1.5):
     query_embedding = model.encode([query])
     query_embedding = np.array(query_embedding).astype("float32")
     distances, indices = index.search(query_embedding, top_k)
