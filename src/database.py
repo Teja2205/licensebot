@@ -105,6 +105,43 @@ def get_messages(conversation_id, jwt):
     except Exception as e:
         print(f"Error fetching messages: {e}")
         return []
+# ─────────────────────────────────────────────
+# Feedback
+# ─────────────────────────────────────────────
+def save_feedback(user_id, conversation_id, message_id, rating, comment, jwt):
+    supabase = get_supabase()
+    supabase.postgrest.auth(jwt)
+    try:
+        response = supabase.table("feedback").insert({
+            "user_id":         user_id,
+            "conversation_id": conversation_id,
+            "message_id":      message_id,
+            "rating":          rating,
+            "comment":         comment or ""
+        }).execute()
+        return response.data[0] if response.data else None
+    except Exception as e:
+        print(f"Error saving feedback: {e}")
+        return None
+
+def get_feedback_stats(user_id, jwt):
+    supabase = get_supabase()
+    supabase.postgrest.auth(jwt)
+    try:
+        response = supabase.table("feedback") \
+            .select("rating") \
+            .eq("user_id", user_id) \
+            .execute()
+        data  = response.data
+        total = len(data)
+        up    = sum(1 for f in data if f["rating"] == "up")
+        down  = sum(1 for f in data if f["rating"] == "down")
+        return {"total": total, "up": up, "down": down}
+    except Exception as e:
+        print(f"Error fetching feedback stats: {e}")
+        return {"total": 0, "up": 0, "down": 0}
+
+
 
 # ─────────────────────────────────────────────
 # Test connection

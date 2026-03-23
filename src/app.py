@@ -9,7 +9,7 @@ from sentence_transformers import SentenceTransformer
 from pinecone_store import upsert_documents, search_pinecone
 from loader import load_documents, split_documents, load_pdf_file
 from main import build_messages, format_sources
-from database import sign_in, sign_up, create_conversation, save_message, get_conversations, get_messages
+from database import sign_in, sign_up, create_conversation, save_message, get_conversations, get_messages, save_feedback, get_feedback_stats
 
 load_dotenv()
 
@@ -243,12 +243,41 @@ def show_chat_page():
                     st.text(sources_text)
 
         # Save assistant message to Supabase
+        message_id = None
         if st.session_state.conversation_id:
-            save_message(
+            saved = save_message(
                 st.session_state.conversation_id,
                 "assistant", answer, sources_text,
                 st.session_state.jwt
             )
+            if saved:
+                message_id = saved["id"]
+
+        # Feedback buttons
+        if message_id:
+            col1, col2, col3 = st.columns([1, 1, 8])
+            with col1:
+                if st.button("👍", key=f"up_{message_id}"):
+                    from database import save_feedback
+                    save_feedback(
+                        st.session_state.user.id,
+                        st.session_state.conversation_id,
+                        message_id,
+                        "up", "",
+                        st.session_state.jwt
+                    )
+                    st.toast("Thanks for the feedback! 👍")
+            with col2:
+                if st.button("👎", key=f"down_{message_id}"):
+                    from database import save_feedback
+                    save_feedback(
+                        st.session_state.user.id,
+                        st.session_state.conversation_id,
+                        message_id,
+                        "down", "",
+                        st.session_state.jwt
+                    )
+                    st.toast("Thanks for the feedback! 👎")
 
         st.session_state.messages.append({
             "role": "assistant", "content": answer
