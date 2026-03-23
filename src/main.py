@@ -3,46 +3,21 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 import ollama
-import faiss
-import numpy as np
+from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
+from pinecone_store import upsert_documents, search_pinecone, get_index_stats
 from loader import load_documents, split_documents
 
+load_dotenv()
+
 MODEL_NAME = "all-MiniLM-L6-v2"
-EMBEDDING_DIM = 384
-LLM_MODEL = "llama3.2"
+LLM_MODEL  = "llama3.2"
 
 # ─────────────────────────────────────────────
-# Component 1 & 2 — Build Vector Store
+# Initialize Model
 # ─────────────────────────────────────────────
-def build_vector_store(chunks):
-    model = SentenceTransformer(MODEL_NAME)
-    texts = [chunk.page_content for chunk in chunks]
-    embeddings = model.encode(texts, show_progress_bar=False)
-    embeddings = np.array(embeddings).astype("float32")
-    index = faiss.IndexFlatL2(EMBEDDING_DIM)
-    index.add(embeddings)
-    return index, chunks, model
-
-# ─────────────────────────────────────────────
-# Component 3 — Retrieval with Distance Threshold
-# ─────────────────────────────────────────────
-def retrieve(query, index, chunks, model, top_k=2, threshold=1.5):
-    query_embedding = model.encode([query])
-    query_embedding = np.array(query_embedding).astype("float32")
-    distances, indices = index.search(query_embedding, top_k)
-
-    results = []
-    for i, idx in enumerate(indices[0]):
-        distance = distances[0][i]
-        # Only include chunks below the distance threshold
-        if distance < threshold:
-            results.append({
-                "content": chunks[idx].page_content,
-                "source":  os.path.basename(chunks[idx].metadata["source"]),
-                "distance": round(float(distance), 4)
-            })
-    return results
+def get_model():
+    return SentenceTransformer(MODEL_NAME)
 
 # ─────────────────────────────────────────────
 # Component 5 — Conversation Memory
@@ -59,12 +34,10 @@ Rules you must follow:
 
     messages = [{"role": "system", "content": system_prompt}]
 
-    # Inject conversation history
     for turn in history:
         messages.append({"role": "user",      "content": turn["question"]})
         messages.append({"role": "assistant", "content": turn["answer"]})
 
-    # Add current question with context
     current = f"""Context:
 {context}
 
@@ -79,22 +52,23 @@ Question: {query}"""
 def format_sources(results):
     if not results:
         return "No relevant sources found."
-    seen = set()
+    seen  = set()
     lines = []
     for i, r in enumerate(results):
         if r["source"] not in seen:
             seen.add(r["source"])
-            lines.append(f"  [{i+1}] {r['source']} (relevance score: {r['distance']})")
+            score = r.get("score", r.get("distance", 0))
+            lines.append(f"  [{i+1}] {r['source']} (relevance: {score})")
     return "\n".join(lines)
 
 # ─────────────────────────────────────────────
 # Core ask function
 # ─────────────────────────────────────────────
-def ask(query, index, chunks, model, history):
-    # Retrieve relevant chunks
-    results = retrieve(query, index, chunks, model)
+def ask(query, model, history):
+    # Retrieve from Pinecone
+    results = search_pinecone(query, model)
 
-    # Build context string
+    # Build context
     context = ""
     if results:
         for r in results:
@@ -105,7 +79,7 @@ def ask(query, index, chunks, model, history):
     # Build messages with memory
     messages = build_messages(history, context, query)
 
-    # Stream answer from Llama
+    # Stream answer
     print(f"\n🤖 LicenseBot: ", end="", flush=True)
     answer = ""
     for chunk in ollama.chat(
@@ -113,14 +87,12 @@ def ask(query, index, chunks, model, history):
         messages=messages,
         stream=True
     ):
-        piece = chunk["message"]["content"]
+        piece   = chunk["message"]["content"]
         print(piece, end="", flush=True)
         answer += piece
 
-    # Print citations
     print(f"\n\n📎 Sources:\n{format_sources(results)}")
     print("\n" + "─"*60)
-
     return answer
 
 # ─────────────────────────────────────────────
@@ -129,27 +101,30 @@ def ask(query, index, chunks, model, history):
 def main():
     print("="*60)
     print("  LicenseBot — AI Licensing Policy Assistant")
-    print("  Powered by Llama 3.2 + FAISS + Sentence Transformers")
+    print("  Powered by Llama 3.2 + Pinecone + Sentence Transformers")
     print("="*60)
-    print("\nLoading knowledge base...")
+    print("\nInitializing...")
 
-    docs = load_documents()
+    model = get_model()
+
+    # Load and upsert base docs on first run
+    print("Syncing knowledge base with Pinecone...")
+    docs   = load_documents()
     chunks = split_documents(docs)
-    index, chunks, model = build_vector_store(chunks)
+    upsert_documents(chunks, model)
+    get_index_stats()
 
-    print("✅ Knowledge base ready!")
+    print("\n✅ Ready!")
     print("💬 Ask me anything about licensing policies.")
     print("   Type 'quit' to exit | Type 'history' to see conversation\n")
     print("─"*60)
 
-    # Conversation memory — stores all previous turns
     history = []
 
     while True:
         try:
             query = input("\n👤 You: ").strip()
 
-            # Handle special commands
             if not query:
                 continue
             if query.lower() == "quit":
@@ -165,14 +140,8 @@ def main():
                         print(f"A{i+1}: {turn['answer'][:100]}...")
                 continue
 
-            # Get answer
-            answer = ask(query, index, chunks, model, history)
-
-            # Save turn to memory
-            history.append({
-                "question": query,
-                "answer":   answer
-            })
+            answer = ask(query, model, history)
+            history.append({"question": query, "answer": answer})
 
         except KeyboardInterrupt:
             print("\n\nGoodbye!")
