@@ -82,7 +82,8 @@ if __name__ == "__main__":
     print("Ready!\n" + "="*60)
 
     # Test questions
-    ask("when do licenses need to be renewed?", index, chunks, model)
+    answer=ask("when do licenses need to be renewed?", index, chunks, model)
+    print(answer)
     ask("what happens if someone violates the license policy?", index, chunks, model)
     ask("who approves renewals over $10,000?", index, chunks, model)
     ask("what is the weather today?", index, chunks, model)
