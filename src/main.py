@@ -48,11 +48,14 @@ def retrieve(query, index, chunks, model, top_k=2, threshold=1.5):
 # Component 5 — Conversation Memory
 # ─────────────────────────────────────────────
 def build_messages(history, context, query):
-    system_prompt = """You are LicenseBot, an AI assistant that answers questions about software licensing policies.
-Use ONLY the context provided to answer the question.
-If the answer is not in the context, say "I don't have enough information to answer that."
-Always mention which document your answer comes from.
-Keep answers concise and professional."""
+    system_prompt = """You are LicenseBot, an AI assistant that answers questions strictly based on provided context documents.
+
+Rules you must follow:
+1. ONLY use information from the context provided. Never use outside knowledge.
+2. If the answer is not in the context, respond with exactly: "I don't have enough information to answer that based on the available documents."
+3. Never speculate, never use training knowledge, never add information not in the context.
+4. Always cite which document your answer comes from.
+5. Keep answers concise and professional."""
 
     messages = [{"role": "system", "content": system_prompt}]
 
