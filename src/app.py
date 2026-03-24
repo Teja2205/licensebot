@@ -3,7 +3,6 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 import streamlit as st
-import ollama
 from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
 from pinecone_store import upsert_documents, search_pinecone
@@ -228,12 +227,15 @@ def show_chat_page():
 
                 answer      = ""
                 placeholder = st.empty()
-                for chunk in ollama.chat(
-                    model="llama3.2",
-                    messages=messages,
-                    stream=True
-                ):
-                    piece    = chunk["message"]["content"]
+                from groq import Groq
+                client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+                stream = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=messages,
+                stream=True
+                )
+                for chunk in stream:
+                    piece    = chunk.choices[0].delta.content or ""
                     answer  += piece
                     placeholder.markdown(answer + "▌")
                 placeholder.markdown(answer)

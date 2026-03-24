@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-import ollama
+from groq import Groq
 from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
 from pinecone_store import upsert_documents, search_pinecone, get_index_stats
@@ -11,13 +11,24 @@ from loader import load_documents, split_documents
 load_dotenv()
 
 MODEL_NAME = "all-MiniLM-L6-v2"
-LLM_MODEL  = "llama3.2"
+GROQ_MODEL = "llama-3.3-70b-versatile"
+
+def get_groq_client():
+    return Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+def get_model():
+    return SentenceTransformer(MODEL_NAME)
+
+load_dotenv()
+
+# MODEL_NAME = "all-MiniLM-L6-v2"
+# LLM_MODEL  = "llama3.2"
 
 # ─────────────────────────────────────────────
 # Initialize Model
 # ─────────────────────────────────────────────
 def get_model():
-    return SentenceTransformer(MODEL_NAME)
+    return SentenceTransformer(GROQ_MODEL)
 
 # ─────────────────────────────────────────────
 # Component 5 — Conversation Memory
@@ -79,15 +90,17 @@ def ask(query, model, history):
     # Build messages with memory
     messages = build_messages(history, context, query)
 
-    # Stream answer
+    # Stream answer via Groq
     print(f"\n🤖 LicenseBot: ", end="", flush=True)
     answer = ""
-    for chunk in ollama.chat(
-        model=LLM_MODEL,
+    client = get_groq_client()
+    stream = client.chat.completions.create(
+        model=GROQ_MODEL,
         messages=messages,
         stream=True
-    ):
-        piece   = chunk["message"]["content"]
+    )
+    for chunk in stream:
+        piece = chunk.choices[0].delta.content or ""
         print(piece, end="", flush=True)
         answer += piece
 
