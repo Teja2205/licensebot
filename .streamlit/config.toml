@@ -2,6 +2,9 @@
 headless = true
 enableCORS = false
 enableXsrfProtection = false
+port = 10000
 
 [browser]
 gatherUsageStats = false
+serverAddress = "0.0.0.0"
+serverPort = 10000
