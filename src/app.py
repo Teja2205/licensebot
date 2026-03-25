@@ -12,7 +12,7 @@ from database import sign_in, sign_up, create_conversation, save_message, get_co
 
 load_dotenv()
 
-MODEL_NAME = "all-MiniLM-L6-v2"
+MODEL_NAME = "llama-3.3-70b-versatile",
 
 st.set_page_config(
     page_title="LicenseBot",
@@ -23,6 +23,7 @@ st.set_page_config(
 # ─────────────────────────────────────────────
 # Session State
 # ─────────────────────────────────────────────
+
 if "user"              not in st.session_state:
     st.session_state.user = None
 if "jwt"               not in st.session_state:

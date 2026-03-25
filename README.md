@@ -198,3 +198,23 @@ Full Stack AI Engineer
 ## License
 
 MIT License — free to use, modify, and distribute.
+
+
+## Phase 5 Session 2 Complete 🎉
+```
+✅ 10-question evaluation dataset
+✅ Faithfulness scoring — answer vs ground truth
+✅ Relevancy scoring — answer vs question
+✅ Pass/fail per question
+✅ Summary report
+✅ Results saved to evaluation_results.json
+```
+
+---
+
+## What's Next — Phase 5 Session 3: Deploy to Render.com
+
+This is the final piece. Instead of running locally, LicenseBot will have a **live public URL** anyone can access.
+```
+Local:  http://localhost:8501
+Live:   https://licensebot.onrender.com
