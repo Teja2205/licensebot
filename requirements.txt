@@ -12,7 +12,3 @@ langchain-text-splitters==1.1.1
 numpy==1.26.4
 requests==2.32.5
 tenacity==9.1.4
-sentence-transformers==2.7.0
-torch==2.1.0
-transformers==4.37.0
-tokenizers==0.15.0
