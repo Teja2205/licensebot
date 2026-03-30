@@ -8,8 +8,7 @@ from dotenv import load_dotenv
 from pinecone_store import upsert_documents, search_pinecone
 from loader import load_documents, split_documents, load_pdf_file
 from main import build_messages, format_sources
-from database import sign_in, sign_up, create_conversation, save_message, get_conversations, get_messages, save_feedback
-
+from database import sign_in, sign_up, create_conversation, save_message, get_conversations, get_messages, save_feedback, get_google_auth_url, exchange_auth_code
 load_dotenv()
 
 GROQ_MODEL = "llama-3.3-70b-versatile"
@@ -41,6 +40,20 @@ def get_groq_client():
 def show_auth_page():
     st.title("🤖 LicenseBot")
     st.caption("AI-powered assistant for software licensing policies")
+
+    # Determine redirect URL based on environment
+    redirect_url = "https://licensebot.onrender.com" if not st.secrets.get("LOCAL") else "http://localhost:8501"
+
+    auth_res = get_google_auth_url(redirect_url)
+    if auth_res["success"]:
+        st.markdown(f'''
+            <a href="{auth_res['url']}" target="_self" style="text-decoration: none;">
+                <button style="width: 100%; padding: 10px; background-color: #4285F4; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Sign in with Google
+                </button>
+            </a>
+            <br><br>
+        ''', unsafe_allow_html=True)
     st.divider()
     tab1, tab2 = st.tabs(["Sign In", "Sign Up"])
     with tab1:
@@ -174,3 +187,15 @@ if st.session_state.user is None:
     show_auth_page()
 else:
     show_chat_page()
+# Catch the Google OAuth redirect code
+if "code" in st.query_params:
+    auth_code = st.query_params["code"]
+    with st.spinner("Authenticating with Google..."):
+        result = exchange_auth_code(auth_code)
+        if result["success"]:
+            st.session_state.user = result["user"]
+            st.session_state.jwt  = result["session"].access_token
+            st.query_params.clear()
+            st.success("Signed in with Google successfully!")
+        else:
+            st.error(f"Google Sign-In failed: {result['error']}")
