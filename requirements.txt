@@ -12,3 +12,5 @@ langchain-text-splitters
 requests
 tenacity
 numpy
+huggingface_hub
+huggingface_hub
