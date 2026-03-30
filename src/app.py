@@ -42,7 +42,9 @@ def show_auth_page():
     st.caption("AI-powered assistant for software licensing policies")
 
     # Determine redirect URL based on environment
-    redirect_url = "https://licensebot.onrender.com" if not st.secrets.get("LOCAL") else "http://localhost:8501"
+
+# If Render is hosting the app, use the live URL. Otherwise, default to localhost.
+    redirect_url = "https://licensebot.onrender.com" if os.getenv("RENDER") else "http://localhost:8501"
 
     auth_res = get_google_auth_url(redirect_url)
     if auth_res["success"]:
