@@ -15,10 +15,16 @@ def get_embedding(text):
         headers=headers,
         json={"inputs": text, "options": {"wait_for_model": True}}
     )
-    embedding = response.json()
-    if isinstance(embedding[0], list):
-        embedding = np.mean(embedding, axis=0)
-    return embedding
+    result = response.json()
+    # HF API returns nested list for sentences — flatten to single vector
+    if isinstance(result, list):
+        arr = np.array(result)
+        if arr.ndim == 2:
+            # Multiple token embeddings — mean pool them
+            return arr.mean(axis=0).tolist()
+        elif arr.ndim == 1:
+            return arr.tolist()
+    return result
 
 def get_embeddings(texts):
     return [get_embedding(text) for text in texts]
