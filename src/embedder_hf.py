@@ -6,10 +6,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 HF_TOKEN  = os.getenv("HF_TOKEN", "")
-MODEL_URL = "https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2"
+MODEL_URL = "https://router.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2"
 
 def get_embedding(text):
-    headers  = {"Authorization": f"Bearer {HF_TOKEN}"} if HF_TOKEN else {}
+    headers  = {"Authorization": f"Bearer {HF_TOKEN}"}
     response = requests.post(
         MODEL_URL,
         headers=headers,
@@ -17,10 +17,8 @@ def get_embedding(text):
     )
     result = response.json()
 
-    # Debug — print what HF is returning
-    print(f"HF API response type: {type(result)}")
     if isinstance(result, dict):
-        print(f"HF API error response: {result}")
+        print(f"HF API error: {result}")
         raise ValueError(f"HF API returned error: {result}")
 
     arr = np.array(result, dtype=np.float32)
