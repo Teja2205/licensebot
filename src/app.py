@@ -6,7 +6,7 @@ import streamlit as st
 from groq import Groq
 from dotenv import load_dotenv
 from pinecone_store import upsert_documents, search_pinecone
-from loader import load_documents, split_documents, load_pdf_file
+from loader import load_documents, split_documents, load_pdf_file, load_docx_file
 from main import build_messages, format_sources
 from database import sign_in, sign_up, create_conversation, save_message, get_conversations, get_messages, save_feedback, get_google_auth_url, exchange_auth_code
 load_dotenv()
@@ -117,17 +117,22 @@ def show_chat_page():
                 st.rerun()
         st.divider()
         st.subheader("📂 Upload Documents")
-        uploaded_files = st.file_uploader("Upload PDF documents", type=["pdf"], accept_multiple_files=True)
+        uploaded_files = st.file_uploader("Upload PDF or Word documents", type=["pdf", "docx"], accept_multiple_files=True)
         if uploaded_files:
             new_files = [f for f in uploaded_files if f.name not in st.session_state.uploaded_files]
-            if new_files:
-                with st.spinner("Processing PDFs..."):
-                    for pdf_file in new_files:
-                        pdf_docs   = load_pdf_file(pdf_file)
-                        pdf_chunks = split_documents(pdf_docs)
-                        upsert_documents(pdf_chunks)
-                        st.session_state.uploaded_files.append(pdf_file.name)
-                        st.success(f"✅ {pdf_file.name}")
+            for file in new_files:
+                        # Route to the correct loader based on file extension
+                        if file.name.endswith(".pdf"):
+                            docs = load_pdf_file(file)
+                        elif file.name.endswith(".docx"):
+                            docs = load_docx_file(file)
+                            
+                        # Chunk and upsert to Pinecone
+                        chunks = split_documents(docs)
+                        upsert_documents(chunks)
+                        
+                        st.session_state.uploaded_files.append(file.name)
+                        st.success(f"✅ {file.name}")
         st.divider()
         if st.button("🚪 Sign Out", use_container_width=True):
             for key in list(st.session_state.keys()):
