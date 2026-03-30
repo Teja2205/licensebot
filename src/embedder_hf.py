@@ -16,7 +16,14 @@ def get_embedding(text):
         json={"inputs": text, "options": {"wait_for_model": True}}
     )
     result = response.json()
-    arr    = np.array(result, dtype=np.float32)
+
+    # Debug — print what HF is returning
+    print(f"HF API response type: {type(result)}")
+    if isinstance(result, dict):
+        print(f"HF API error response: {result}")
+        raise ValueError(f"HF API returned error: {result}")
+
+    arr = np.array(result, dtype=np.float32)
     if arr.ndim == 2:
         arr = arr.mean(axis=0)
     elif arr.ndim == 3:
