@@ -14,3 +14,4 @@ tenacity
 numpy
 huggingface_hub
 huggingface_hub
+python-docx
