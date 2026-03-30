@@ -140,8 +140,8 @@ def get_feedback_stats(user_id, jwt):
     except Exception as e:
         print(f"Error fetching feedback stats: {e}")
         return {"total": 0, "up": 0, "down": 0}
-    def get_google_auth_url(redirect_url):
-        supabase = get_supabase()
+def get_google_auth_url(redirect_url):
+    supabase = get_supabase()
     try:
         response = supabase.auth.sign_in_with_oauth({
             "provider": "google",
@@ -153,8 +153,8 @@ def get_feedback_stats(user_id, jwt):
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-    def exchange_auth_code(auth_code):
-        supabase = get_supabase()
+def exchange_auth_code(auth_code):
+    supabase = get_supabase()
     try:
         response = supabase.auth.exchange_code_for_session({"auth_code": auth_code})
         return {"success": True, "user": response.user, "session": response.session}
