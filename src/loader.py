@@ -1,4 +1,5 @@
 import os
+import docx
 import pdfplumber
 from langchain_community.document_loaders import TextLoader
 from langchain_core.documents import Document
@@ -33,6 +34,32 @@ def load_pdf_file(uploaded_file):
                 )
                 documents.append(doc)
     print(f"Loaded PDF: {uploaded_file.name} ({len(documents)} pages)")
+    return documents
+
+def load_docx_file(uploaded_file):
+    """Load a Word Document from a Streamlit uploaded file object"""
+    documents = []
+    
+    # Read the docx file
+    doc = docx.Document(uploaded_file)
+    
+    # Extract text from all paragraphs, ignoring empty ones
+    full_text = [para.text for para in doc.paragraphs if para.text.strip()]
+            
+    # Combine the text and create a LangChain Document
+    combined_text = "\n".join(full_text)
+    if combined_text:
+        documents.append(
+            Document(
+                page_content=combined_text,
+                metadata={
+                    "source": uploaded_file.name,
+                    "type": "docx"
+                }
+            )
+        )
+        
+    print(f"Loaded DOCX: {uploaded_file.name}")
     return documents
 
 def load_documents(docs_path=DOCS_PATH):
